@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Dark theme (default) ── */
+  --bg-base:        #080d18;
+  --bg-surface:     #0b1120;
+  --bg-elevated:    #0f1a2e;
+  --bg-card:        #0a0f1e;
+  --bg-user-bubble: #1a0d14;
+
+  --border-subtle:  #1a2236;
+  --border-mid:     #1e2a40;
+  --border-strong:  #1e3056;
+  --border-accent:  #2a4a7f;
+
+  --text-primary:   #f0f4ff;
+  --text-secondary: #8ba0c4;
+  --text-muted:     #3d5280;
+  --text-faint:     #2a3a5c;
+
+  --accent-blue:    #3d5280;
+  --accent-blue-hover: #7ab4e0;
+
+  --user-text:      rgba(255,225,230,0.9);
+  --user-border:    rgba(136,20,40,0.4);
+  --bot-text:       #e2e8f0;
+
+  --scrollbar-thumb: #1e2a40;
+  --scrollbar-hover: #2a3a5c;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.light {
+  --bg-base:        #f4f6fb;
+  --bg-surface:     #ffffff;
+  --bg-elevated:    #eef1f8;
+  --bg-card:        #f8f9fc;
+  --bg-user-bubble: #fff0f3;
+
+  --border-subtle:  #dde3f0;
+  --border-mid:     #c8d3e8;
+  --border-strong:  #b8c8e0;
+  --border-accent:  #6b8fc4;
+
+  --text-primary:   #0f1c35;
+  --text-secondary: #3d5a8a;
+  --text-muted:     #6b85b0;
+  --text-faint:     #9ab0cc;
+
+  --accent-blue:    #4a7abf;
+  --accent-blue-hover: #1a4a9f;
+
+  --user-text:      #4a0018;
+  --user-border:    rgba(200,80,100,0.35);
+  --bot-text:       #1a2a40;
+
+  --scrollbar-thumb: #c8d3e8;
+  --scrollbar-hover: #b0c0d8;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }

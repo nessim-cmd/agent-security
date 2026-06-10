@@ -1,4 +1,4 @@
-import { handleChatStream, toAISdkStream } from "@mastra/ai-sdk";
+import { toAISdkStream } from "@mastra/ai-sdk";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { mastra } from "../../../../mastra";
 import fs from "fs";
@@ -15,14 +15,66 @@ function logEntry(entry: object) {
   }
 }
 
+// ── Convert AI SDK UIMessages → Mastra-compatible messages ────────────
+// UIMessages have a `parts` array that may contain non-text entries like
+// `step-start`, tool calls, etc. Mastra requires {id, createdAt, role, content}.
+type UIMessageLike = {
+  id?: string;
+  role?: string;
+  content?: string;
+  parts?: Array<{ type: string; text?: string }>;
+};
+
+type MastraMessage = {
+  id: string;
+  createdAt: Date;
+  role: "user" | "assistant";
+  content: string;
+};
+
+function toMastraMessages(messages: UIMessageLike[]): MastraMessage[] {
+  const result: MastraMessage[] = [];
+
+  for (const msg of messages) {
+    const role = msg.role === "assistant" ? "assistant" : "user";
+
+    // Extract only text parts (ignore step-start, tool calls, etc.)
+    let content = "";
+    if (Array.isArray(msg.parts)) {
+      content = msg.parts
+        .filter((p) => p.type === "text" && typeof p.text === "string")
+        .map((p) => p.text as string)
+        .join("")
+        .trim();
+    }
+
+    // Fall back to content string if parts had nothing
+    if (!content && typeof msg.content === "string") {
+      content = msg.content.trim();
+    }
+
+    // Skip messages with no extractable text (pure tool-call messages, etc.)
+    if (!content) continue;
+
+    result.push({
+      id: msg.id ?? crypto.randomUUID(),
+      createdAt: new Date(),
+      role,
+      content,
+    });
+  }
+
+  return result;
+}
+
 export async function POST(req: Request) {
   const params = await req.json();
-  const messages = params.messages ?? [];
-  const lastMsg = messages[messages.length - 1];
+  const rawMessages: UIMessageLike[] = params.messages ?? [];
+  const lastMsg = rawMessages[rawMessages.length - 1];
 
-  // Extract user text from ai@6 parts format
+  // Extract user text for logging
   const userText =
-    lastMsg?.parts?.find((p: { type: string }) => p.type === "text")?.text ??
+    lastMsg?.parts?.find((p) => p.type === "text")?.text ??
     lastMsg?.content ??
     "";
 
@@ -32,7 +84,6 @@ export async function POST(req: Request) {
       ? (process.env.OLLAMA_MODEL ?? "qwen3:8b")
       : (process.env.OPENROUTER_MODEL ?? "unknown");
 
-  // Log the attack immediately
   const logId = Date.now().toString();
   logEntry({
     id: logId,
@@ -43,19 +94,22 @@ export async function POST(req: Request) {
     model,
   });
 
-  // Stream and capture response text simultaneously
+  // Sanitize messages for Mastra — strips step-start parts, adds id + createdAt
+  const mastraMessages = toMastraMessages(rawMessages);
+
   let responseText = "";
 
-  const agentStream = await mastra.getAgent("securityAgent").stream(messages);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const agentStream = await mastra.getAgent("securityAgent").stream(mastraMessages as any);
 
   const uiStream = createUIMessageStream({
-    originalMessages: messages,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    originalMessages: rawMessages as any,
     execute: async ({ writer }) => {
       for await (const part of toAISdkStream(agentStream, {
         from: "agent",
         version: "v6",
       })) {
-        // Capture text chunks for logging
         if (
           part.type === "text-delta" &&
           "textDelta" in part &&
@@ -67,7 +121,6 @@ export async function POST(req: Request) {
       }
     },
     onFinish: () => {
-      // Log response once stream is done
       logEntry({
         id: logId,
         timestamp: new Date().toISOString(),

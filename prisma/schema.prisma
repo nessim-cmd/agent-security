@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Chat sessions (both agents) ────────────────────────────────────
+model Session {
+  id        String    @id @default(cuid())
+  title     String    @default("New Session")
+  agentId   String    @default("securityAgent") // "securityAgent" | "bankingAgent"
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@index([agentId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  sessionId String
+  role      String   // "user" | "assistant"
+  content   String
+  parts     Json     // raw UIMessage parts array
+  createdAt DateTime @default(now())
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+// ── Fake banking data (Alex's world) ──────────────────────────────
+model BankCustomer {
+  id           String          @id @default(cuid())
+  name         String
+  email        String          @unique
+  phone        String
+  verified     Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  accounts     BankAccount[]
+}
+
+model BankAccount {
+  id           String            @id @default(cuid())
+  customerId   String
+  accountNo    String            @unique
+  type         String            // "checking" | "savings" | "credit"
+  balance      Float
+  currency     String            @default("USD")
+  status       String            @default("active") // "active" | "frozen" | "closed"
+  createdAt    DateTime          @default(now())
+  customer     BankCustomer      @relation(fields: [customerId], references: [id])
+  transactions BankTransaction[]
+
+  @@index([customerId])
+}
+
+model BankTransaction {
+  id          String      @id @default(cuid())
+  accountId   String
+  type        String      // "debit" | "credit" | "transfer"
+  amount      Float
+  description String
+  merchant    String?
+  status      String      @default("completed")
+  createdAt   DateTime    @default(now())
+  account     BankAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+}
+
+// ── Attack audit log ───────────────────────────────────────────────
+model AttackLog {
+  id             String   @id @default(cuid())
+  sessionId      String?
+  agentId        String   // which agent was attacked
+  attackType     String?  // "LLM01" | "LLM02" etc
+  userMessage    String
+  agentResponse  String?
+  provider       String
+  model          String
+  vulnerable     Boolean? // null = unknown, true = bypassed, false = defended
+  createdAt      DateTime @default(now())
+
+  @@index([agentId])
+  @@index([attackType])
+}
