@@ -106,10 +106,11 @@ export async function POST(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     originalMessages: rawMessages as any,
     execute: async ({ writer }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for await (const part of toAISdkStream(agentStream, {
         from: "agent",
         version: "v6",
-      })) {
+      }) as any) {
         if (
           part.type === "text-delta" &&
           "textDelta" in part &&

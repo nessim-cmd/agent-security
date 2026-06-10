@@ -28,12 +28,15 @@ export async function POST(req: Request) {
 
   let responseText = "";
 
-  const agentStream = await mastra.getAgent("bankingAgent").stream(messages);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const agentStream = await mastra.getAgent("bankingAgent").stream(messages as any);
 
   const uiStream = createUIMessageStream({
-    originalMessages: messages,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    originalMessages: messages as any,
     execute: async ({ writer }) => {
-      for await (const part of toAISdkStream(agentStream, { from: "agent", version: "v6" })) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for await (const part of toAISdkStream(agentStream, { from: "agent", version: "v6" }) as any) {
         if (part.type === "text-delta" && "textDelta" in part && typeof part.textDelta === "string") {
           responseText += part.textDelta;
         }

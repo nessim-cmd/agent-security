@@ -21,7 +21,7 @@ function getModel() {
 }
 
 export const bankingAgent = new Agent({
-    id: "banking-agent",
+  id: "bankingAgent",
   name: "Alex",
   instructions: BANKING_SYSTEM_PROMPT,
   model: getModel(),

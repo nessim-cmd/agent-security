@@ -80,7 +80,7 @@ When a user uploads a file for analysis:
 
 // ── Agent ─────────────────────────────────────────────────────────────
 export const securityAgent = new Agent({
-  id: "security-agent",
+  id: "securityAgent",
   name: "SecureBot",
   instructions: SYSTEM_PROMPT,
   model: getModel(),
