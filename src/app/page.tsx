@@ -77,10 +77,8 @@ export default function HomePage() {
         {/* Title */}
         <h1
           className="text-4xl font-bold font-mono tracking-tight mb-4 max-w-2xl"
-          style={{ color: "var(--text-primary)" }}
         >
-          Test AI systems for
-          <span style={{ color: "#f43f5e" }}> security vulnerabilities</span>
+          Test AI Agent and LLM
         </h1>
 
         <p
