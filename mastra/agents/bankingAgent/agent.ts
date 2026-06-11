@@ -3,6 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { BANKING_SYSTEM_PROMPT } from "./systemPrompt";
 import { webSearchTool } from "../../tools/webSearch";
 import { readFileTool } from "../../tools/readFile";
+import { playwrightTool } from "../../tools/playwrightRunner";
 
 function getModel() {
   const provider = process.env.LLM_PROVIDER ?? "openrouter";
@@ -28,5 +29,6 @@ export const bankingAgent = new Agent({
   tools: {
     webSearch: webSearchTool,
     readFile: readFileTool,
+    playwright: playwrightTool,
   },
 });

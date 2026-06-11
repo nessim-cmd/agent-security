@@ -21,12 +21,14 @@
     "@xyflow/react": "^12.11.0",
     "ai": "^6.0.199",
     "next": "16.2.9",
+    "playwright": "^1.60.0",
     "prisma": "^6.19.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "playwright": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
