@@ -87,3 +87,115 @@ model AttackLog {
   @@index([agentId])
   @@index([attackType])
 }
+
+
+
+// ══════════════════════════════════════════════════════════════════
+// PLATFORM — Security Testing Engine
+// ══════════════════════════════════════════════════════════════════
+
+model Target {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String   // "external_url"|"openai"|"anthropic"|"ollama"|"groq"|"openrouter"|"template"
+  endpoint    String?  // for external_url type
+  provider    String?  // for direct LLM types
+  model       String?  // e.g. "qwen3:8b"
+  apiKey      String?  // stored as plain text for now
+  headers     Json?    // extra HTTP headers as key/value object
+  templateId  String?  // "banking" | "securebot" for built-in templates
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workflows  Workflow[]
+  attackRuns AttackRun[]
+
+  @@index([type])
+}
+
+model Workflow {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  targetId         String
+  mode             String   @default("manual") // "manual" | "auto"
+  attackCategories Json?    // string[] e.g. ["LLM01","LLM02","LLM07"]
+  status           String   @default("idle")   // "idle"|"running"|"done"|"failed"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  target Target        @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  runs   WorkflowRun[]
+
+  @@index([targetId])
+}
+
+model WorkflowRun {
+  id            String    @id @default(cuid())
+  workflowId    String
+  status        String    @default("running") // "running"|"done"|"failed"
+  securityScore Int?      // 0-100, null until analysis finishes
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+
+  workflow    Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  attackRuns  AttackRun[]
+  findings    Finding[]
+  threatModel ThreatModel?
+
+  @@index([workflowId])
+}
+
+model AttackRun {
+  id            String   @id @default(cuid())
+  workflowRunId String
+  targetId      String
+  owaspCategory String   // "LLM01" | "LLM02" etc.
+  attackName    String   // e.g. "Direct Prompt Injection"
+  payload       String   // the exact prompt sent to the target
+  response      String?  // what the target replied
+  success       Boolean? // null=not analyzed yet, true=vulnerable, false=defended
+  createdAt     DateTime @default(now())
+
+  workflowRun WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  target      Target      @relation(fields: [targetId], references: [id])
+  finding     Finding?
+
+  @@index([workflowRunId])
+  @@index([owaspCategory])
+}
+
+model Finding {
+  id             String   @id @default(cuid())
+  workflowRunId  String
+  attackRunId    String?  @unique  // one finding per attack run
+  title          String
+  owaspCategory  String
+  severity       String   // "critical"|"high"|"medium"|"low"|"info"
+  confidence     Int      // 0-100
+  description    String
+  evidence       String?  // quote from the target response that proves it
+  recommendation String
+  createdAt      DateTime @default(now())
+
+  workflowRun WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  attackRun   AttackRun?  @relation(fields: [attackRunId], references: [id])
+
+  @@index([workflowRunId])
+  @@index([severity])
+}
+
+model ThreatModel {
+  id            String   @id @default(cuid())
+  workflowRunId String   @unique  // one threat model per run
+  targetName    String?
+  domain        String?  // e.g. "Banking", "Customer Support"
+  tools         Json?    // string[] of discovered tools
+  risks         Json?    // string[] of recommended attack categories
+  rawOutput     Json?    // full JSON from the recon agent
+  createdAt     DateTime @default(now())
+
+  workflowRun WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+}
